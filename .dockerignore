@@ -1,1 +1,20 @@
 node_modules
+
+
+# compressed file
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.gz
+*.tgz
+*.bz2
+*.xz
+*.lzma
+*.Z
+*.war
+*.jar
+*.ear
+*.class
+*.dll
+*.tar
