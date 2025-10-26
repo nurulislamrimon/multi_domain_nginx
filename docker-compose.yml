@@ -1,15 +1,39 @@
-version: "3.9"
 services:
-  app:
+  api_saas:
     image: multi:prod
-    # build: ./app
-    container_name: saas_app
-    ports:
-      - "5000:5000"
+    container_name: saas_app_api
+    expose:
+      - "5000"
     restart: always
     environment:
       NODE_ENV: production
-      APP_NAME: API_SERVER
+      APP_NAME: API_SAAS
+    networks:
+      - saas_network
+
+  dashboard_saas:
+    image: multi:prod
+    container_name: saas_app_dashboard
+    expose:
+      - "5000"
+    restart: always
+    environment:
+      NODE_ENV: production
+      APP_NAME: API_SAAS_Dashboard
+    networks:
+      - saas_network
+
+  client_saas:
+    image: multi:prod
+    container_name: saas_app_client
+    expose:
+      - "5000"
+    restart: always
+    environment:
+      NODE_ENV: production
+      APP_NAME: API_SAAS_Client
+    networks:
+      - saas_network
 
   nginx:
     build: ./nginx
@@ -18,7 +42,15 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - app
+      - api_saas
+      - dashboard_saas
+      - client_saas
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/certs:/etc/ssl/certs
+    networks:
+      - saas_network
+
+networks:
+  saas_network:
+    driver: bridge

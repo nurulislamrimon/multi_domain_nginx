@@ -10,9 +10,6 @@ RUN npm install
 # Copy the rest of your code
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
 EXPOSE 5000
 
 CMD ["npm", "run", "start"]
