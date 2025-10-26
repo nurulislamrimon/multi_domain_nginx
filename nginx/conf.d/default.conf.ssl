@@ -1,0 +1,97 @@
+##################################################
+# Upstreams (match Docker Compose service names)
+##################################################
+
+# API backend
+upstream api_saas {
+    server api_saas:5000;
+}
+
+# Dashboard backend
+upstream dashboard_saas {
+    server dashboard_saas:5000;
+}
+
+# Client backend
+upstream client_saas {
+    server client_saas:5000;
+}
+
+##################################################
+# API server
+##################################################
+
+server {
+    listen 443 ssl;
+    server_name api.dripnext.com;
+
+    ssl_certificate /etc/letsencrypt/live/dripnext.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dripnext.com/privkey.pem;
+
+    location / {
+        proxy_pass http://api_saas;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    server_name api.dripnext.com;
+    return 301 https://$host$request_uri;
+}
+
+##################################################
+# Dashboard server
+##################################################
+
+server {
+    listen 443 ssl;
+    server_name panel.dripnext.com;
+
+    ssl_certificate /etc/letsencrypt/live/dripnext.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dripnext.com/privkey.pem;
+
+    location / {
+        proxy_pass http://dashboard_saas;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    server_name panel.dripnext.com;
+    return 301 https://$host$request_uri;
+}
+
+##################################################
+# Client server (wildcard)
+##################################################
+
+server {
+    listen 443 ssl;
+    server_name *.dripnext.com dripnext.com;
+
+    ssl_certificate /etc/letsencrypt/live/dripnext.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/dripnext.com/privkey.pem;
+
+    location / {
+        proxy_pass http://client_saas;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    listen 80;
+    server_name *.dripnext.com dripnext.com;
+    return 301 https://$host$request_uri;
+}
+

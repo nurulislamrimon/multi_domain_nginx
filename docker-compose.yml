@@ -11,15 +11,15 @@ services:
     networks:
       - saas_network
 
-  dashboard_saas:
+  panel_saas:
     image: multi:prod
-    container_name: saas_app_dashboard
+    container_name: saas_app_panel
     expose:
       - "5000"
     restart: always
     environment:
       NODE_ENV: production
-      APP_NAME: API_SAAS_Dashboard
+      APP_NAME: API_SAAS_Panel
     networks:
       - saas_network
 
@@ -43,11 +43,12 @@ services:
       - "443:443"
     depends_on:
       - api_saas
-      - dashboard_saas
+      - panel_saas
       - client_saas
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/certs:/etc/ssl/certs
+      - ./nginx/certs:/etc/letsencrypt
+      - ./nginx/html:/var/www/certbot
     networks:
       - saas_network
 
