@@ -2,56 +2,29 @@ services:
   api_saas:
     image: multi:prod
     container_name: saas_app_api
-    expose:
-      - "5000"
     restart: always
     environment:
       NODE_ENV: production
-      APP_NAME: API_SAAS
-    networks:
-      - saas_network
+      APP_NAME: saas_app_api
+    ports:
+      - "5001:5000"
 
   panel_saas:
     image: multi:prod
     container_name: saas_app_panel
-    expose:
-      - "5000"
     restart: always
     environment:
       NODE_ENV: production
-      APP_NAME: API_SAAS_Panel
-    networks:
-      - saas_network
+      APP_NAME: saas_app_panel
+    ports:
+      - "5002:5000"
 
   client_saas:
     image: multi:prod
     container_name: saas_app_client
-    expose:
-      - "5000"
     restart: always
     environment:
       NODE_ENV: production
-      APP_NAME: API_SAAS_Client
-    networks:
-      - saas_network
-
-  nginx:
-    build: ./nginx
-    container_name: saas_nginx
+      APP_NAME: saas_app_client
     ports:
-      - "80:80"
-      - "443:443"
-    depends_on:
-      - api_saas
-      - panel_saas
-      - client_saas
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./nginx/certs:/etc/letsencrypt
-      - ./nginx/html:/var/www/certbot
-    networks:
-      - saas_network
-
-networks:
-  saas_network:
-    driver: bridge
+      - "5003:5000"
