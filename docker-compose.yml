@@ -22,9 +22,14 @@ services:
   client_saas:
     image: multi:prod
     container_name: saas_app_client
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     restart: always
     environment:
       NODE_ENV: production
       APP_NAME: saas_app_client
     ports:
       - "5003:5000"
+    volumes:
+      - /root/auto-ssl.js:/root/auto-ssl.js

@@ -1,24 +1,31 @@
-import { execSync } from "child_process";
+import { spawn } from "child_process";
 import fs from "fs";
 import dns from "dns/promises";
 
 const DOMAIN = process.argv[2];
 const APP_PORT = 5003;
-const EMAIL = process.env.BACKUP_EMAIL;
-const VPS_IP = process.env.VPS_IP;
-const NGINX_CONF = `/etc/nginx/conf.d/${DOMAIN}.conf`;
+const EMAIL = "nirimonpc@gmail.com";
+const VPS_IP = "52.74.69.186";
+const NGINX_CONF_DIR = "/etc/nginx/conf.d";
+const NGINX_CONF = `${NGINX_CONF_DIR}/${DOMAIN}.conf`;
+
+// Absolute paths
+const NGINX_BIN = "/usr/sbin/nginx";
+const SYSTEMCTL_BIN = "/bin/systemctl";
+const CERTBOT_BIN = "/usr/bin/certbot";
 
 if (!DOMAIN) {
   console.error("❌ Usage: node auto-ssl.js <domain>");
   process.exit(1);
 }
 
+// sleep helper
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function waitForDNS() {
   console.log(`🔍 Checking if ${DOMAIN} points to ${VPS_IP}...`);
   let attempts = 0;
-  while (attempts < 30) {
+  while (attempts < 2) {
     try {
       const records = await dns.lookup(DOMAIN);
       if (records.address === VPS_IP) {
@@ -33,13 +40,31 @@ async function waitForDNS() {
       console.log(`🌐 DNS not ready yet (${err.message})`);
     }
     attempts++;
-    await sleep(10000); // wait 10s
+    await sleep(10000);
   }
   console.error("❌ DNS check failed after 5 minutes. Aborting SSL issue.");
   process.exit(1);
 }
 
+function run(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: "inherit" });
+    child.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`${command} exited with code ${code}`));
+    });
+    child.on("error", (err) => {
+      reject(err);
+    });
+  });
+}
+
 (async () => {
+  // ensure directory exists
+  if (!fs.existsSync(NGINX_CONF_DIR)) {
+    fs.mkdirSync(NGINX_CONF_DIR, { recursive: true });
+  }
+
   await waitForDNS();
 
   console.log(`🔧 Creating temporary HTTP config for ${DOMAIN}...`);
@@ -55,19 +80,24 @@ server {
 }
 `;
   fs.writeFileSync(NGINX_CONF, tempConfig);
-  execSync("sudo nginx -t && sudo systemctl reload nginx");
+
+  await run(NGINX_BIN, ["-t"]);
+  await run(SYSTEMCTL_BIN, ["reload", "nginx"]);
   console.log("✅ HTTP config loaded successfully.");
 
   // 🔐 Issue SSL
   console.log("🚀 Issuing SSL via Let's Encrypt...");
-  try {
-    execSync(
-      `sudo certbot certonly --nginx -d ${DOMAIN} --agree-tos -m ${EMAIL} --non-interactive --redirect`
-    );
-  } catch (err) {
-    console.error("❌ Failed to issue SSL:", err.message);
-    process.exit(1);
-  }
+  await run(CERTBOT_BIN, [
+    "certonly",
+    "--nginx",
+    "-d",
+    DOMAIN,
+    "--agree-tos",
+    "-m",
+    EMAIL,
+    "--non-interactive",
+    "--redirect",
+  ]);
 
   // 🔁 Replace with HTTPS config
   const sslConfig = `
@@ -92,6 +122,7 @@ server {
 }
 `;
   fs.writeFileSync(NGINX_CONF, sslConfig);
-  execSync("sudo nginx -t && sudo systemctl reload nginx");
+  await run(NGINX_BIN, ["-t"]);
+  await run(SYSTEMCTL_BIN, ["reload", "nginx"]);
   console.log(`🎉 SSL activated successfully for ${DOMAIN}`);
 })();
