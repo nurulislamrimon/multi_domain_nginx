@@ -3,6 +3,8 @@ node_modules
 *.env
 *.env.*
 
+nginx/ssl
+
 # compressed file
 *.zip
 *.tar.gz

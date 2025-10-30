@@ -1,6 +1,8 @@
 node_modules
 
 
+nginx
+
 # compressed file
 *.zip
 *.tar.gz

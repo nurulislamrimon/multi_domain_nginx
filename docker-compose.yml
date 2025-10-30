@@ -1,35 +1,25 @@
-services:
-  api_saas:
-    image: multi:prod
-    container_name: saas_app_api
-    restart: always
-    environment:
-      NODE_ENV: production
-      APP_NAME: saas_app_api
-    ports:
-      - "5001:5000"
+version: "3.9"
 
-  panel_saas:
-    image: multi:prod
-    container_name: saas_app_panel
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: saas_nginx
     restart: always
-    environment:
-      NODE_ENV: production
-      APP_NAME: saas_app_panel
     ports:
-      - "5002:5000"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/ssl
+    depends_on:
+      - client_saas
 
   client_saas:
-    image: multi:prod
+    image: saas:prod
     container_name: saas_app_client
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
     restart: always
     environment:
       NODE_ENV: production
       APP_NAME: saas_app_client
-    ports:
-      - "5003:5000"
-    volumes:
-      - /root/auto-ssl.js:/root/auto-ssl.js
+    expose:
+      - "5000"
